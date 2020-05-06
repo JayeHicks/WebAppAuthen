@@ -143,4 +143,4 @@ Logins : {
 With the AWS infrastructure properly configured and the JavaScript edits applied to the file SinglePageWebApp.html, this simple web page will authenticate end users against Cognito. Good luck!
 
 # License
-This project is licensed under the GNU Public License v3.0.  For details see: https://github.com/JayeHicks/DynamicDashboard/blob/master/LICENSE
+This project is licensed under the GNU Public License v3.0.  For details see: https://github.com/JayeHicks/WebAppAuthen/blob/master/LICENSE
