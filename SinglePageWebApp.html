@@ -1,0 +1,202 @@
+<!--
+  Jaye Hicks 2018
+  Use this working template as a starting point for developing a JavaScript-based single-page 
+  web application that uses AWS Cognito to authenticate users as well as store user ids and 
+  user passwords.  After you provision the necessary AWS infrastructure (i.e., Cognito), you
+  will need to edit this file in two sections.  Search for "Edit"
+-->
+<!DOCTYPE html>
+<html>
+
+<script
+  //indirectly sourced from https://www.npmjs.com 
+  src="amazon-cognito-identity.min.js">
+</script>
+<script src="https://sdk.amazonaws.com/js/aws-sdk-2.331.0.min.js"></script>
+
+  
+<script>
+////////////////////////////////////////////////////////////// 
+// Edit this section
+//////////////////////////////////////////////////////////////
+var THE_REGION = 'us-east-1';
+var USER_POOL_ID = 'us-east-1_123456789';
+var USER_POOL_APP_CLIENT_ID = '12345678901234567890123456';
+var IDENTITY_POOL_ID = 'us-east-1:12345678-1234-1234-1234-a1234567890';
+   
+// provide feedback to web application user
+function displayFeedback(message)
+{
+  document.getElementById("user_update_messages").innerHTML = message;
+}
+
+// clear user input from log in attempt
+function clearLogInValues()
+{
+  document.getElementById("password").value = '';
+  document.getElementById("username").value = '';
+}
+
+// enable or disable all of the web application's controls  
+function toggleControls(mode)
+{
+  if(mode === 'enable')
+  {
+    value = false;
+  }
+  else
+  {
+    value = true;
+  }
+  
+  // all of the application controls
+  document.getElementById("bigButtonID").disabled = value;
+}
+
+// attempt by user to log into web application succeeded
+function logInSuccess(name)
+{
+  displayFeedback(name + ", you have been successfully logged in.");
+  clearLogInValues();
+  toggleControls('enable');
+}
+
+// attempt by user to log into web application failed
+function logInFailure()
+{
+  displayFeedback("Log in attempt failed.  Log on (bottom of this page) " +
+                  "required to access this web application.");
+  clearLogInValues();
+  toggleControls('disable');
+}
+
+function doSomething()
+{
+  alert('Big Button processing occuring...');
+}
+
+// process user's attempt to log into the web application  	  
+function logInToApp()
+{
+  displayFeedback("Attempting to log you in.  Please wait..."); 
+  var authenticationData = 
+  {
+    Username : document.getElementById("username").value,
+    Password : document.getElementById("password").value
+  }; 
+  var authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails(authenticationData);
+  var poolData = 
+  { 
+	UserPoolId : USER_POOL_ID,
+	ClientId : USER_POOL_APP_CLIENT_ID
+  };
+  var userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
+  var userData = 
+  { 
+    Username : document.getElementById("username").value,
+    Pool : userPool
+  };
+  var cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+  cognitoUser.authenticateUser(authenticationDetails, {
+    onSuccess: function (result) {
+	  var accessToken = result.getAccessToken().getJwtToken();
+	  AWS.config.region = THE_REGION;
+      AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+        IdentityPoolId : IDENTITY_POOL_ID,
+		
+		//////////////////////////////////////////////////////////////////////////
+		//Edit the key portion of the JSON object that is the value porttion of
+		//the JSON key:value pair where "Logins" is the key.  The pattern is:
+		//'cognito-idp.' + <region> + '.amazonaws.com/' + <cognito user pool id>'
+		//Ensure that the value you provide is a literal string (as it is below).
+		//////////////////////////////////////////////////////////////////////////
+		Logins : { 	
+		  'cognito-idp.us-east-1.amazonaws.com/us-east-1_123456789'  : 
+		  result.getIdToken().getJwtToken()
+        }
+      });
+
+      AWS.config.credentials.refresh((error) => {
+        if (error) 
+		{
+		  console.log("Error with credentials refresh");
+          console.error(error);
+		  logInFailure();
+        } 
+		else 
+		{
+          console.log('Successfully logged user into application.');
+		  logInSuccess(userData.Username);
+		  AWS.config.update({
+		    accessKeyId: AWS.config.credentials.accessKeyId, 
+			secretAccessKey: AWS.config.credentials.secretAccessKey,
+			sessionToken: AWS.config.credentials.sessionToken
+		  });
+        }
+      });
+    },
+
+    onFailure: function(err) 
+	{
+	  console.log("Failure to log user into application.");
+	  logInFailure();
+    },
+    
+    mfaRequired: function(codeDeliveryDetails) {
+      var verificationCode = prompt('Please input verification code' ,'');
+      cognitoUser.sendMFACode(verificationCode, this);
+    },
+	
+	newPasswordRequired: function(userAttributes, requiredAttributes) {
+	  var newPassword = prompt("Please enter a new password (min of 6 chars).", "");
+	  if (newPassword == null || newPassword == "" || newPassword.length < 6)
+      {
+		console.log("Password reset attempt failed.");
+		logInFailure();
+	  }
+	  else
+	  {
+	  	logInSuccess(userData.Username);
+	    console.log("Password reset attempt succeeded.");
+	    document.getElementById("password").setAttribute('value',newPassword);
+	    cognitoUser.completeNewPasswordChallenge(newPassword, null, this);
+      }
+	}
+  });
+}
+
+</script>
+  
+  <head>
+  </head>
+  <body>
+    <p id="title">
+      <h1>
+	    Web Application
+	  </h1>
+    </p>
+    <span id="user_update_messages">Log on required to access application (see page bottom).
+	</span>
+    <br>
+	<br>
+	<button id= "bigButtonID" onclick="doSomething()" disabled>Big Button</button>
+	<p>
+	  <fieldset>
+	    <legend> Logon to web application
+		</legend>
+	    <div>
+          <label for="username">User Name: </label>
+            <input type="text" id="username" name="username">
+	    </div>
+	    <br>
+	    <div>
+	      <label for="password">Password: </label>
+	      <input type="password" id="password" name="password">
+	    </div>
+	    <div>
+          <button onclick="logInToApp()">Logon</button>
+        </div>
+	  </fieldset>
+	</p>
+  </body>
+</html>
