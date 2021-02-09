@@ -63,7 +63,7 @@ Before selecting the “Create Pool” button you need to integrate this Identit
 
 After selecting the “Create Pool” button you will land on a page explaining that, from a Cognito perspective, there are two types of users for your application: those that have been authenticated (e.g., by Cognito User Pools, by Facebook, by Google, etc.) and those who have not been authenticated.  Two different IAM roles will be automatically generated for you for each user type.  The reason for two separate IAM roles is that it enables you to differentiate access levels to your application between authenticated users and unauthenticated users.  For this basic template example, go ahead and select the “Allow” link in order to complete creation of the Identity Pool.  For more complex single page web applications, I’ve used the “View Details” section of this page to tweak the automatically created permission levels.  But this doesn’t have to be done during the creation of the Cognito Identity Pool.  You can certainly go into IAM after creating the Identity Pool and tweak the permissions.  
 
-Here is an example tweak that I made for a single page web application that that uses CloudFormation to deploy applications on AWS resources.  I’ve shown the policy that I used during development because the final production policy wound up being large, complex, and a bit hard to follow. 
+Here is an example tweak that I made for a single page web application that that uses CloudFormation to deploy applications on AWS resources.  For the sake of simplicity, the policy I used for development is shown. The production version is more complex as it dials down permission levels below "*". 
 ```
 {
     "Version": "2012-10-17",
